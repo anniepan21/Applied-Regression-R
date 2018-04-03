@@ -1,0 +1,108 @@
+---
+title: "Lab2"
+author: "Chenwei Pan"
+date: "October 27, 2017"
+output: word_document
+---
+Contents: Simple Linear Regression- Inference for Slope and Intercepts- ANOVA Analysis- Model Diagnostic- Predictions and CI for Prediction values. Objectives: basic R skills for SLR.
+
+```{r setup, include=FALSE}
+library(faraway)
+(stat500)
+attach(stat500)
+g <- lm(final~midterm, stat500)
+summary(g)
+plot(x=midterm, y=final, pch=16)
+abline(g)
+```
+
+```{r}
+x <- midterm
+y <- final
+x_bar <- mean(midterm)
+y_bar <- mean(final)
+SXY <- sum((x-x_bar)*(y-y_bar))
+SXX <- sum((x-x_bar)^2)
+beta_1 <- SXY/SXX
+beta_0 <- y_bar-beta_1*x_bar
+beta_1
+beta_0
+```
+
+```{r}
+### 2. Standard error of residuals
+SSE <- sum((g$residuals)^2)
+stand_error <- sqrt(SSE/(length(x)-2))
+stand_error
+```
+
+```{r}
+### 3. Confidence Intervals of the Slope: Var(beta_1)=(stand_error)^2/SXX
+var_beta1 <- (stand_error^2)/SXX
+std_error_beta1 <- sqrt(var_beta1)
+std_error_beta1
+
+t <- 4.735 # Values from summary
+beta_1 + t*0.1190
+beta_1 - t*0.1190
+```
+
+```{r}
+t
+prob <- pt(t,53) 
+prob
+p_value <- 2*(1 - prob)
+p_value
+```
+
+```{r}
+SSE
+SST <- sum((y - y_bar)^2)
+SSR <- SST - SSE
+f <- (SSR/1)/(SSE/53) # 1 is no of predictors
+f
+
+1 - pf(f, 1, 53)
+```
+
+```{r}
+sres <-  rstandard(g)       # standardized residuals
+plot (g$fitted, g$residuals, pch=16, cex=.5) #Plot residuals vs fitted values.
+abline(h=0)      #Add a horizontal line thru 0  
+
+hist(sres)
+qqnorm(sres)
+qqline(sres)
+
+shapiro.test(sres)
+```
+
+```{r}
+
+sres <- rstandard(g)
+cook <- cooks.distance(g)
+plot(cook)
+abline(h=4/55)
+identify(1:55, cook)
+
+cook <- cooks.distance(g)  #Cooks distances
+plot(cook)
+abline(h=2*2/55)   # h=2*(p+1)/n, the cutoff criterion
+
+halfnorm(cook, 4)   #or use halfnorm()
+#now we form new data
+stat500_new <- stat500[ -c(10, 15, 23, 47),  ]      #take out 4 data points
+
+```
+
+```{r}
+g_new <- lm(final ~ midterm, data=stat500_new)
+summary(g_new)
+#We need to make several predictions and CI's for those predictions. 
+
+summary(x) # x is midterm, min(x)=8.5, max(x)=30.00
+
+newdata<- data.frame(midterm=c(32, 35, 40))
+pred <- predict(g_new, newdata, se=TRUE, interval="prediction")
+pred
+```
